@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "tsuru",
+    "slug": "tsuru",
+    "version": "1.0.0",
+    "scheme": "tsuru",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./public/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./public/fonts/GaeilgeKids.otf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_800ExtraBold.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_900Black.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_100Thin.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_200ExtraLight.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_300Light.ttf",
+            "./node_modules/@expo-google-fonts/lexend/Lexend_400Regular.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Tsuru to access your camera"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "orientation": "portrait",
+    "icon": "./public/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./public/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shimadakunn.tsuru"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"],
+      "package": "com.shimadakunn.tsuru"
+    }
+  }
+}
