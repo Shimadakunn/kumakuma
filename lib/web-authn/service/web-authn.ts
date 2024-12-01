@@ -1,179 +1,152 @@
-import { ECDSASigValue } from '@peculiar/asn1-ecc';
-import { AsnParser } from '@peculiar/asn1-schema';
-import * as Application from 'expo-application';
-import { Platform } from 'react-native';
-import * as passkey from 'react-native-passkeys';
-import { Hex, toHex } from 'viem';
+// import { Platform } from 'react-native';
+// import base64 from 'react-native-base64';
+// import { Passkey, PasskeyCreateResult } from 'react-native-passkey';
 
-import { CreateCredential, P256Credential, P256Signature } from '~/lib/web-authn/types';
-import { concatUint8Arrays, shouldRemoveLeadingZero } from '~/utils';
+// // Helper function to encode ArrayBuffer to base64
+// const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+//   return base64.encode(String.fromCharCode.apply(null, Array.from(new Uint8Array(buffer))));
+// };
 
-export * from '~/lib/web-authn/types';
+// // Helper function to decode base64 to ArrayBuffer
+// const base64ToArrayBuffer = (base64String: string) => {
+//   const binaryString = base64.decode(base64String);
+//   const bytes = new Uint8Array(binaryString.length);
+//   for (let i = 0; i < binaryString.length; i++) {
+//     bytes[i] = binaryString.charCodeAt(i);
+//   }
+//   return bytes.buffer;
+// };
 
-// Helper functions for base64URL encoding/decoding
-function bufferToBase64URLString(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let str = '';
-  for (const charCode of bytes) {
-    str += String.fromCharCode(charCode);
-  }
-  const base64String = btoa(str);
-  return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
+// export class WebAuthn {
+//   // Create new credential (registration)
+//   public static async create(username: string) {
+//     console.log('creating credential');
+//     try {
+//       // Use this method to check if passkeys are supported on the device
 
-function utf8StringToBuffer(value: string): ArrayBuffer {
-  return new TextEncoder().encode(value);
-}
+//       const isSupported: boolean = Passkey.isSupported();
+//       console.log('public key credential creation options');
+//       const publicKeyCredentialCreationOptions = {
+//         challenge: arrayBufferToBase64(Uint8Array.from('random-challenge', (c) => c.charCodeAt(0))),
+//         rp: {
+//           name: 'Your App Name',
+//           id: 'yourapp.com',
+//         },
+//         user: {
+//           id: base64.encode(username),
+//           name: username,
+//           displayName: username,
+//         },
+//         pubKeyCredParams: [
+//           {
+//             type: 'public-key' as const,
+//             alg: -7, // ES256
+//           },
+//           {
+//             type: 'public-key' as const,
+//             alg: -257, // RS256
+//           },
+//         ],
+//         timeout: 60000,
+//         attestation: 'none' as AttestationConveyancePreference,
+//         authenticatorSelection: {
+//           authenticatorAttachment: (Platform.OS === 'ios'
+//             ? 'platform'
+//             : 'cross-platform') as AuthenticatorAttachment,
+//           requireResidentKey: true,
+//           userVerification: 'required' as UserVerificationRequirement,
+//         },
+//       };
 
-export class WebAuthn {
-  private static bundleId = Application.applicationId?.split('.').reverse().join('.');
+//       console.log('getting credential');
+//       const result: PasskeyCreateResult = await Passkey.create(publicKeyCredentialCreationOptions);
 
-  private static async _generateRandomBytes(): Promise<Buffer> {
-    const array = new Uint8Array(16);
-    if (Platform.OS === 'web') {
-      window.crypto.getRandomValues(array);
-    } else {
-      // Use React Native's crypto
-      for (let i = 0; i < array.length; i++) {
-        array[i] = Math.floor(Math.random() * 256);
-      }
-    }
-    return Buffer.from(array);
-  }
+//       console.log('credential success', result);
+//       // Format the response for your server
+//       const response = {
+//         id: result.id,
+//         rawId: result.rawId,
+//         type: result.type,
+//         response: {
+//           attestationObject: result.response.attestationObject,
+//           clientDataJSON: result.response.clientDataJSON,
+//         },
+//       };
 
-  public static isSupportedByBrowser(): boolean {
-    if (Platform.OS === 'web') {
-      return (
-        window?.PublicKeyCredential !== undefined &&
-        typeof window.PublicKeyCredential === 'function'
-      );
-    }
-    return passkey.isSupported();
-  }
+//       // Send response to your server for verification
+//       console.log('returning response');
+//       return response;
+//     } catch (error) {
+//       console.error('Error creating credential:', error);
+//       throw error;
+//     }
+//   }
 
-  public static async platformAuthenticatorIsAvailable(): Promise<boolean> {
-    if (Platform.OS === 'web') {
-      if (!this.isSupportedByBrowser()) return false;
-      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    }
-    return passkey.isSupported();
-  }
+//   // Get credential (authentication)
+//   async getCredential() {
+//     try {
+//       // Get challenge from your server
+//       const challenge = await this.getAuthenticationChallenge();
 
-  public static async create({ username }: { username: string }): Promise<CreateCredential | null> {
-    if (!this.isSupportedByBrowser()) return null;
+//       const publicKeyCredentialRequestOptions = {
+//         challenge: base64ToArrayBuffer(challenge),
+//         timeout: 60000,
+//         rpId: 'yourapp.com',
+//         userVerification: 'required' as UserVerificationRequirement,
+//         allowCredentials: [], // Empty array for discoverable credentials
+//       };
 
-    const challenge = bufferToBase64URLString(utf8StringToBuffer('random-challenge'));
+//       const assertion = (await navigator.credentials.get({
+//         publicKey: publicKeyCredentialRequestOptions,
+//       })) as PublicKeyCredential;
 
-    if (Platform.OS === 'web') {
-      // Original web implementation
-      // ... existing web implementation code ...
-      return null;
-    } else {
-      // React Native implementation
-      try {
-        const response = await passkey.create({
-          challenge,
-          rp: {
-            id: Platform.select({
-              ios: this.bundleId,
-              android: this.bundleId?.replaceAll('_', '-'),
-            }),
-            name: 'passkeys-4337/smart-wallet',
-          },
-          user: {
-            id: bufferToBase64URLString(await this._generateRandomBytes()),
-            name: username,
-            displayName: username,
-          },
-          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-          authenticatorSelection: {
-            userVerification: 'required',
-            residentKey: 'required',
-          },
-        });
+//       // Format the response for your server
+//       const response = {
+//         id: assertion.id,
+//         rawId: arrayBufferToBase64(assertion.rawId),
+//         type: assertion.type,
+//         response: {
+//           authenticatorData: arrayBufferToBase64(
+//             (assertion.response as AuthenticatorAssertionResponse).authenticatorData
+//           ),
+//           clientDataJSON: arrayBufferToBase64(assertion.response.clientDataJSON),
+//           signature: arrayBufferToBase64(
+//             (assertion.response as AuthenticatorAssertionResponse).signature
+//           ),
+//           userHandle: (assertion.response as AuthenticatorAssertionResponse).userHandle
+//             ? arrayBufferToBase64(
+//                 (assertion.response as AuthenticatorAssertionResponse).userHandle!
+//               )
+//             : null,
+//         },
+//       };
 
-        if (!response) return null;
+//       // Send response to your server for verification
+//       return await this.verifyAuthentication(response);
+//     } catch (error) {
+//       console.error('Error getting credential:', error);
+//       throw error;
+//     }
+//   }
 
-        const publicKey = response.response.getPublicKey();
-        if (!publicKey) return null;
+//   // Mock server endpoints - replace these with your actual server calls
+//   async getRegistrationChallenge(username: string) {
+//     // Call your server to get a challenge
+//     return 'server-generated-challenge-base64';
+//   }
 
-        // Convert public key to x, y coordinates
-        // Note: You'll need to implement the conversion based on your needs
-        const x = toHex(publicKey.slice(1, 33));
-        const y = toHex(publicKey.slice(33, 65));
+//   async verifyRegistration(response: any) {
+//     // Send registration data to your server for verification
+//     return true;
+//   }
 
-        return {
-          rawId: response.rawId,
-          pubKey: { x, y },
-        };
-      } catch (error) {
-        console.error('Passkey creation error:', error);
-        return null;
-      }
-    }
-  }
+//   async getAuthenticationChallenge() {
+//     // Call your server to get a challenge
+//     return 'server-generated-challenge-base64';
+//   }
 
-  public static async get(challenge?: Hex): Promise<P256Credential | null> {
-    if (!this.isSupportedByBrowser()) return null;
-
-    if (Platform.OS === 'web') {
-      // Original web implementation
-      // ... existing web implementation code ...
-      return null;
-    } else {
-      try {
-        const challengeString = challenge
-          ? bufferToBase64URLString(Buffer.from(challenge.slice(2), 'hex'))
-          : bufferToBase64URLString(utf8StringToBuffer('random-challenge'));
-
-        const response = await passkey.get({
-          rpId: Platform.select({
-            ios: this.bundleId,
-            android: this.bundleId?.replaceAll('_', '-'),
-          }),
-          challenge: challengeString,
-        });
-
-        if (!response) return null;
-
-        // Convert the response to match your P256Credential type
-        const signature = parseSignature(new Uint8Array(response.response.signature));
-
-        return {
-          rawId: response.rawId,
-          clientData: {
-            type: response.response.clientDataJSON.type,
-            challenge: response.response.clientDataJSON.challenge,
-            origin: response.response.clientDataJSON.origin,
-            crossOrigin: response.response.clientDataJSON.crossOrigin,
-          },
-          authenticatorData: toHex(new Uint8Array(response.response.authenticatorData)),
-          signature,
-        };
-      } catch (error) {
-        console.error('Passkey get error:', error);
-        return null;
-      }
-    }
-  }
-
-  // ... rest of the existing helper functions ...
-}
-
-// Parse the signature from the authenticator and remove the leading zero if necessary
-export function parseSignature(signature: Uint8Array): P256Signature {
-  const parsedSignature = AsnParser.parse(signature, ECDSASigValue);
-  let rBytes = new Uint8Array(parsedSignature.r);
-  let sBytes = new Uint8Array(parsedSignature.s);
-  if (shouldRemoveLeadingZero(rBytes)) {
-    rBytes = rBytes.slice(1);
-  }
-  if (shouldRemoveLeadingZero(sBytes)) {
-    sBytes = sBytes.slice(1);
-  }
-  const finalSignature = concatUint8Arrays([rBytes, sBytes]);
-  return {
-    r: toHex(finalSignature.slice(0, 32)),
-    s: toHex(finalSignature.slice(32)),
-  };
-}
+//   async verifyAuthentication(response: any) {
+//     // Send authentication data to your server for verification
+//     return true;
+//   }
+// }

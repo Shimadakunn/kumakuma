@@ -1,11 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Address, Hex, zeroAddress } from 'viem';
+import { Passkey, PasskeyCreateResult } from 'react-native-passkey';
+import { Address, Hex } from 'viem';
 import { Chain } from 'viem/chains';
 
-import { saveUser } from '~/lib/factory';
-import { getUser } from '~/lib/factory/getUser';
-import { WebAuthn } from '~/lib/web-authn/service/web-authn';
+// import { WebAuthn } from '~/lib/web-authn/service/web-authn';
 
 export type Me = {
   account: Address;
@@ -34,33 +33,52 @@ function useMeHook() {
 
     try {
       console.log('WebAuthn signature...');
-      const credential = await WebAuthn.create({ username });
-      console.log('credential', credential);
-      if (!credential) {
-        return;
-      }
-      console.log('saving user on smart contract...');
-      const user = await saveUser({
-        id: credential.rawId,
-        pubKey: credential.pubKey,
+      const credential = await Passkey.create({
+        challenge: 'random-challenge',
+        rp: {
+          name: 'Your App Name',
+          id: 'yourapp.com',
+        },
+        user: {
+          id: username,
+          name: username,
+          displayName: username,
+        },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        timeout: 60000,
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          requireResidentKey: true,
+          userVerification: 'required',
+        },
       });
+      // const credential = await WebAuthn.create(username);
+      // console.log('credential success');
+      // if (!credential) {
+      //   return;
+      // }
+      console.log('saving user on smart contract...');
+      // const user = await saveUser({
+      //   id: credential.rawId,
+      //   pubKey: credential.pubKey,
+      // });
 
-      const me = {
-        keyId: user!.id as Hex,
-        pubKey: user!.pubKey,
-        account: user!.account,
-      };
+      // const me = {
+      //   keyId: user!.id as Hex,
+      //   pubKey: user!.pubKey,
+      //   account: user!.account,
+      // };
 
-      if (me === undefined) {
-        console.log('error while saving user');
-        return;
-      }
+      // if (me === undefined) {
+      //   console.log('error while saving user');
+      //   return;
+      // }
 
-      // Store user data using AsyncStorage
-      await AsyncStorage.setItem('@kuma/me', JSON.stringify(me));
-      await AsyncStorage.setItem('@kuma/returning', 'true');
-      setIsReturning(true);
-      setMe(me);
+      // // Store user data using AsyncStorage
+      // await AsyncStorage.setItem('@kuma/me', JSON.stringify(me));
+      // await AsyncStorage.setItem('@kuma/returning', 'true');
+      // setIsReturning(true);
+      // setMe(me);
     } catch (e) {
       console.error('error while creating user', e);
     } finally {
@@ -69,35 +87,32 @@ function useMeHook() {
   }
 
   async function get() {
-    setIsLoading(true);
-    try {
-      const credential = await WebAuthn.get();
-      if (!credential) {
-        return;
-      }
-      const user = await getUser(credential.rawId);
-
-      if (user?.account === undefined || user?.account === zeroAddress) {
-        throw new Error('user not found');
-      }
-
-      const me = {
-        keyId: user.id as Hex,
-        pubKey: user.pubKey,
-        account: user.account,
-      };
-
-      await AsyncStorage.setItem('@kuma/me', JSON.stringify(me));
-      await AsyncStorage.setItem('@kuma/returning', 'true');
-      setIsReturning(true);
-      setMe(me);
-    } catch (e) {
-      await AsyncStorage.removeItem('@kuma/returning');
-      await disconnect();
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
+    // setIsLoading(true);
+    // try {
+    //   const credential = await WebAuthn.get();
+    //   if (!credential) {
+    //     return;
+    //   }
+    //   const user = await getUser(credential.rawId);
+    //   if (user?.account === undefined || user?.account === zeroAddress) {
+    //     throw new Error('user not found');
+    //   }
+    //   const me = {
+    //     keyId: user.id as Hex,
+    //     pubKey: user.pubKey,
+    //     account: user.account,
+    //   };
+    //   await AsyncStorage.setItem('@kuma/me', JSON.stringify(me));
+    //   await AsyncStorage.setItem('@kuma/returning', 'true');
+    //   setIsReturning(true);
+    //   setMe(me);
+    // } catch (e) {
+    //   await AsyncStorage.removeItem('@kuma/returning');
+    //   await disconnect();
+    //   console.error(e);
+    // } finally {
+    //   setIsLoading(false);
+    // }
   }
 
   useEffect(() => {
