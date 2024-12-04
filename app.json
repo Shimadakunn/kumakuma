@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "tsuru",
-    "slug": "tsuru",
+    "name": "kuma",
+    "slug": "kuma",
     "version": "1.0.0",
-    "scheme": "tsuru",
+    "scheme": "kuma",
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -11,7 +11,6 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-dev-client"],
       [
         "expo-font",
         {
@@ -34,7 +33,8 @@
         {
           "cameraPermission": "Allow Tsuru to access your camera"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -51,7 +51,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shimadakunn.tsuru"
+      "bundleIdentifier": "com.kuma"
     },
     "android": {
       "adaptiveIcon": {
@@ -59,7 +59,7 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"],
-      "package": "com.shimadakunn.tsuru"
+      "package": "com.kuma"
     }
   }
 }

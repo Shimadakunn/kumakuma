@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Passkey, PasskeyCreateResult } from 'react-native-passkey';
 import { Address, Hex } from 'viem';
 import { Chain } from 'viem/chains';
 
@@ -32,31 +31,6 @@ function useMeHook() {
     setIsLoading(true);
 
     try {
-      console.log('WebAuthn signature...');
-      const credential = await Passkey.create({
-        challenge: 'random-challenge',
-        rp: {
-          name: 'Your App Name',
-          id: 'yourapp.com',
-        },
-        user: {
-          id: username,
-          name: username,
-          displayName: username,
-        },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-        timeout: 60000,
-        authenticatorSelection: {
-          authenticatorAttachment: 'platform',
-          requireResidentKey: true,
-          userVerification: 'required',
-        },
-      });
-      // const credential = await WebAuthn.create(username);
-      // console.log('credential success');
-      // if (!credential) {
-      //   return;
-      // }
       console.log('saving user on smart contract...');
       // const user = await saveUser({
       //   id: credential.rawId,
@@ -81,6 +55,12 @@ function useMeHook() {
       // setMe(me);
     } catch (e) {
       console.error('error while creating user', e);
+      if (e instanceof Error) {
+        if (e.message.includes('not associated with domain')) {
+          console.error('Domain association error - please check your iOS configuration');
+        }
+      }
+      throw e;
     } finally {
       setIsLoading(false);
     }

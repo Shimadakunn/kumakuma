@@ -1,7 +1,8 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { ChevronLeft } from 'lucide-react-native';
-import { useState } from 'react';
-import { Image, Pressable, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Linking, Pressable, TextInput, View } from 'react-native';
 
 import { Button, Text } from '~/components/ui';
 import { useMe } from '~/providers/MeProvider';
@@ -68,8 +69,61 @@ const Actions = () => {
 };
 
 export default function Login() {
+  const { address } = useLocalSearchParams<{ address: string }>();
+
+  useEffect(() => {
+    // If we receive an address parameter, redirect to home
+    if (address) {
+      router.replace('/home');
+    }
+  }, [address]);
+
+  const handleUrl = ({ url }: { url: string }) => {
+    try {
+      const urlObj = new URL(url);
+      const addressParam = urlObj.searchParams.get('address');
+
+      if (addressParam) {
+        router.replace('/home');
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Handle deep linking
+    Linking.addEventListener('url', handleUrl);
+
+    // Check if app was opened from a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        console.log('Initial URL:', url);
+        handleUrl({ url });
+      }
+    });
+  }, []);
+
+  const openBrowser = async () => {
+    try {
+      // Replace with your web app URL
+      // Add your app's custom URL scheme as a parameter
+      const result = await WebBrowser.openAuthSessionAsync(
+        'https://kuma-auth.vercel.app/?app=kuma',
+        'kuma://callback'
+      );
+
+      if (result.type === 'success') {
+        // Handle successful authentication
+        console.log('Auth successful:', result);
+      }
+    } catch (error) {
+      console.error('Error opening browser:', error);
+    }
+  };
+
   return (
-    <View className="flex h-full items-center justify-center ">
+    <View className="flex h-full items-center justify-center border">
       <View className="flex flex-1 flex-row items-center gap-1 ">
         <Image source={require('~/public/logo.png')} className="h-10 w-10" />
         <Text className="text-4xl font-black" style={{ fontFamily: 'Lexend_900Black' }}>
@@ -86,6 +140,10 @@ export default function Login() {
         </Text>
       </View>
       <Actions />
+
+      <Button onPress={openBrowser}>
+        <Text>Open Browser</Text>
+      </Button>
     </View>
   );
 }
